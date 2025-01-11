@@ -2,25 +2,51 @@
   <div class="students-container">
     <!-- 搜索区域 -->
     <el-card class="filter-card" shadow="hover">
-      <el-form :inline="true" :model="filterForm" class="demo-form-inline">
-        <el-form-item label="姓名">
-          <el-input v-model="filterForm.name" placeholder="请输入姓名" clearable>
-            <template #prefix>
-              <el-icon><User /></el-icon>
-            </template>
-          </el-input>
-        </el-form-item>
-        <el-form-item>
-          <el-button-group>
-            <el-button type="primary" @click="handleSearch">
-              <el-icon><Search /></el-icon>查询
+      <div class="filter-header">
+        <div class="left">
+          <el-form :inline="true" :model="filterForm" class="demo-form-inline">
+            <el-form-item label="姓名">
+              <el-input v-model="filterForm.name" placeholder="请输入姓名" clearable>
+                <template #prefix>
+                  <el-icon><User /></el-icon>
+                </template>
+              </el-input>
+            </el-form-item>
+            <el-form-item>
+              <el-button-group>
+                <el-button type="primary" @click="handleSearch">
+                  <el-icon><Search /></el-icon>查询
+                </el-button>
+                <el-button @click="resetForm">
+                  <el-icon><Refresh /></el-icon>重置
+                </el-button>
+              </el-button-group>
+            </el-form-item>
+          </el-form>
+        </div>
+        <div class="right">
+          <el-upload
+            class="upload-demo"
+            :auto-upload="false"
+            :show-file-list="false"
+            accept=".xlsx,.xls"
+            :on-change="handleFileChange"
+          >
+            <el-button type="primary">
+              <el-icon><Upload /></el-icon>导入Excel
             </el-button>
-            <el-button @click="resetForm">
-              <el-icon><Refresh /></el-icon>重置
-            </el-button>
-          </el-button-group>
-        </el-form-item>
-      </el-form>
+          </el-upload>
+          <el-button type="info" @click="downloadTemplate">
+            <el-icon><Download /></el-icon>下载模板
+          </el-button>
+          <el-button type="success" @click="handleExport">
+            <el-icon><Download /></el-icon>导出Excel
+          </el-button>
+          <el-button type="primary" @click="handleAdd">
+            <el-icon><Plus /></el-icon>添加学生
+          </el-button>
+        </div>
+      </div>
     </el-card>
 
     <!-- 表格区域 -->
@@ -214,15 +240,18 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { Edit, Delete, Plus, Search, Refresh, Document, User, Phone, Male, Female, List } from '@element-plus/icons-vue'
+import { Edit, Delete, Plus, Search, Refresh, Document, User, Phone, Male, Female, List, Download, Upload } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   getStudentList, 
   addStudent, 
   updateStudent, 
   deleteStudent,
-  getStudentListByHeadteacher
+  getStudentListByHeadteacher,
+  importStudents
 } from '@/api/student'
+import { exportStudentExcel } from '@/utils/excel'
+import { parseExcel, generateExampleExcel } from '../utils/importExcel.js'
 
 // 表格数据
 const loading = ref(false)
@@ -358,10 +387,18 @@ const handleCurrentChange = (val) => {
 const handleAdd = () => {
   dialogType.value = 'add'
   dialogVisible.value = true
+  
+  // 重置表单
   Object.keys(form).forEach(key => {
     form[key] = ''
   })
+  
+  // 设置默认值
   form.gender = '男'
+  form.status = 1
+  // 自动添加班主任字段
+  form.headteacher = localStorage.getItem('teacherName') || ''
+  
   if (formRef.value) {
     formRef.value.resetFields()
   }
@@ -384,11 +421,17 @@ const submitForm = async () => {
     if (valid) {
       loading.value = true
       try {
+        // 确保提交时包含 headteacher 字段
+        const submitData = {
+          ...form,
+          headteacher: localStorage.getItem('teacherName')
+        }
+        
         if (dialogType.value === 'add') {
-          await addStudent(form)
+          await addStudent(submitData)
           ElMessage.success('添加成功')
         } else {
-          await updateStudent(form)
+          await updateStudent(submitData)
           ElMessage.success('修改成功')
         }
         dialogVisible.value = false
@@ -443,6 +486,80 @@ const getStatusType = (status) => {
     4: 'info'
   }
   return typeMap[status] || ''
+}
+
+// 添加导出处理函数
+const handleExport = async () => {
+  try {
+    loading.value = true
+    // 获取所有学生数据用于导出
+    const res = await getStudentListByHeadteacher({
+      pageSize: 999999, // 获取所有数据
+      pageNum: 1
+    })
+    
+    if (res.code === 200 && res.data.records) {
+      exportStudentExcel(res.data.records)
+      ElMessage.success('导出成功')
+    } else {
+      ElMessage.error('导出失败：没有数据')
+    }
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败，请重试')
+  } finally {
+    loading.value = false
+  }
+}
+
+// 处理文件选择
+const handleFileChange = async (file) => {
+  if (!file) return
+  
+  try {
+    ElMessage.info('正在解析Excel文件...')
+    const students = await parseExcel(file.raw)
+    
+    if (students.length === 0) {
+      ElMessage.warning('Excel文件中没有数据')
+      return
+    }
+    
+    // 确认导入
+    ElMessageBox.confirm(
+      `确认导入 ${students.length} 条学生数据吗？`,
+      '提示',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    ).then(async () => {
+      try {
+        const teacherName = localStorage.getItem('teacherName')
+        const studentsWithTeacher = students.map(student => ({
+          ...student,
+          headteacher: teacherName,
+          status: 1
+        }))
+        
+        await importStudents(studentsWithTeacher)
+        ElMessage.success('导入成功')
+        fetchStudentList() // 刷新列表
+      } catch (error) {
+        console.error('导入失败:', error)
+        ElMessage.error('导入失败')
+      }
+    })
+  } catch (error) {
+    console.error('文件处理失败:', error)
+    ElMessage.error('文件处理失败，请确保文件格式正确')
+  }
+}
+
+// 下载模板
+const downloadTemplate = () => {
+  generateExampleExcel()
 }
 
 // 页面加载时获取数据
@@ -522,5 +639,23 @@ onMounted(() => {
 .el-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+}
+
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.right {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.upload-demo {
+  display: inline-block;
+  margin-right: 10px;
 }
 </style> 
