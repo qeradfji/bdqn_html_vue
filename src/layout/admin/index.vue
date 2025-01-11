@@ -27,6 +27,18 @@
           <el-icon><School /></el-icon>
           <span>班级管理</span>
         </el-menu-item>
+        <el-menu-item index="/admin/disciplinary">
+          <el-icon><Warning /></el-icon>
+          <span>违纪管理</span>
+        </el-menu-item>
+        <el-menu-item index="/admin/interview">
+          <el-icon><ChatDotRound /></el-icon>
+          <span>访谈管理</span>
+        </el-menu-item>
+        <el-menu-item index="/admin/department">
+          <el-icon><OfficeBuilding /></el-icon>
+          <span>部门管理</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
     <el-container>
@@ -58,7 +70,16 @@
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Odometer, User, UserFilled, School, ArrowDown } from '@element-plus/icons-vue'
+import { 
+  Odometer, 
+  User, 
+  UserFilled, 
+  School, 
+  ArrowDown, 
+  Warning,
+  ChatDotRound,
+  OfficeBuilding
+} from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()

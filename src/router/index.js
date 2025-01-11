@@ -35,6 +35,21 @@ const routes = [
         path: 'classes',
         name: 'AdminClasses',
         component: () => import('../views/admin/Classes.vue')
+      },
+      {
+        path: 'disciplinary',
+        name: 'AdminDisciplinary',
+        component: () => import('@/views/admin/Disciplinary.vue')
+      },
+      {
+        path: 'interview',
+        name: 'AdminInterview',
+        component: () => import('@/views/admin/Interview.vue')
+      },
+      {
+        path: 'department',
+        name: 'AdminDepartment',
+        component: () => import('@/views/admin/Department.vue')
       }
     ]
   },

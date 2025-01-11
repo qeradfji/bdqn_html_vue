@@ -1,5 +1,4 @@
-import * as XLSX from 'xlsx'
-import * as XLSXStyle from 'xlsx-style'
+import ExcelJS from 'exceljs'
 
 /**
  * 导出Excel文件
@@ -9,142 +8,94 @@ import * as XLSXStyle from 'xlsx-style'
  * @param {Array} options.data 数据
  * @param {string} options.filename 文件名
  */
-export const exportExcel = ({ title, headers, data, filename }) => {
+export const exportExcel = async ({ title, headers, data, filename }) => {
   // 添加时间戳到文件名
   const timestamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0].replace('T', '_')
   const filenameWithTimestamp = filename.replace('.xlsx', '') + '_' + timestamp + '.xlsx'
 
   // 创建工作簿
-  const workbook = XLSX.utils.book_new()
+  const workbook = new ExcelJS.Workbook()
+  const worksheet = workbook.addWorksheet('Sheet1')
 
-  // 转换数据为二维数组格式
-  const excelData = [
-    [title], // 标题行
-    headers.map(h => h.header), // 表头行
-    ...data.map(item => headers.map(h => item[h.key])) // 数据行
-  ]
+  // 设置列
+  worksheet.columns = headers.map(h => ({
+    header: h.header,
+    key: h.key,
+    width: h.width
+  }))
 
-  // 创建工作表
-  const worksheet = XLSX.utils.aoa_to_sheet(excelData)
+  // 添加标题行
+  worksheet.insertRow(1, [title])
+  worksheet.mergeCells(1, 1, 1, headers.length)
 
-  // 合并标题单元格
-  worksheet['!merges'] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } }
-  ]
+  // 设置标题样式
+  const titleRow = worksheet.getRow(1)
+  titleRow.height = 30
+  titleRow.font = {
+    name: '宋体',
+    size: 16,
+    bold: true
+  }
+  titleRow.alignment = {
+    vertical: 'middle',
+    horizontal: 'center'
+  }
 
-  // 设置列宽
-  worksheet['!cols'] = headers.map(h => ({ wch: h.width }))
+  // 设置表头样式
+  const headerRow = worksheet.getRow(2)
+  headerRow.height = 25
+  headerRow.font = {
+    name: '宋体',
+    size: 12,
+    bold: true
+  }
+  headerRow.alignment = {
+    vertical: 'middle',
+    horizontal: 'center'
+  }
+  headerRow.fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FFE0E0E0' }
+  }
 
-  // 设置样式
-  const titleStyle = {
-    font: { 
-      name: '宋体', 
-      sz: 16, 
-      bold: true,
-      color: { rgb: "000000" }
-    },
-    alignment: { 
-      horizontal: 'center', 
-      vertical: 'center' 
-    },
-    fill: {
-      fgColor: { rgb: "FFFFFF" }
+  // 添加数据
+  worksheet.addRows(data)
+
+  // 设置数据行样式
+  for (let i = 3; i <= worksheet.rowCount; i++) {
+    const row = worksheet.getRow(i)
+    row.height = 20
+    row.font = {
+      name: '宋体',
+      size: 11
+    }
+    row.alignment = {
+      vertical: 'middle',
+      horizontal: 'center'
     }
   }
 
-  const headerStyle = {
-    font: { 
-      name: '宋体', 
-      sz: 12, 
-      bold: true,
-      color: { rgb: "000000" }
-    },
-    alignment: { 
-      horizontal: 'center', 
-      vertical: 'center' 
-    },
-    fill: {
-      fgColor: { rgb: "E0E0E0" }
-    },
-    border: {
-      top: { style: 'thin', color: { rgb: "000000" } },
-      bottom: { style: 'thin', color: { rgb: "000000" } },
-      left: { style: 'thin', color: { rgb: "000000" } },
-      right: { style: 'thin', color: { rgb: "000000" } }
-    }
-  }
-
-  const dataStyle = {
-    font: { 
-      name: '宋体', 
-      sz: 11,
-      color: { rgb: "000000" }
-    },
-    alignment: { 
-      horizontal: 'center', 
-      vertical: 'center' 
-    },
-    border: {
-      top: { style: 'thin', color: { rgb: "000000" } },
-      bottom: { style: 'thin', color: { rgb: "000000" } },
-      left: { style: 'thin', color: { rgb: "000000" } },
-      right: { style: 'thin', color: { rgb: "000000" } }
-    }
-  }
-
-  // 应用样式到每个单元格
-  for (let i = 0; i < excelData.length; i++) {
-    const row = excelData[i]
-    for (let j = 0; j < row.length; j++) {
-      const cellRef = XLSX.utils.encode_cell({ r: i, c: j })
-      if (!worksheet[cellRef]) {
-        worksheet[cellRef] = { v: '' }
-      }
-      
-      if (i === 0) {
-        worksheet[cellRef].s = titleStyle
-      } else if (i === 1) {
-        worksheet[cellRef].s = headerStyle
-      } else {
-        worksheet[cellRef].s = dataStyle
+  // 设置所有单元格边框
+  for (let i = 1; i <= worksheet.rowCount; i++) {
+    for (let j = 1; j <= worksheet.columnCount; j++) {
+      const cell = worksheet.getCell(i, j)
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
       }
     }
   }
 
-  // 设置行高
-  worksheet['!rows'] = [
-    { hpt: 30 }, // 标题行高
-    { hpt: 25 }, // 表头行高
-    ...Array(data.length).fill({ hpt: 20 }) // 数据行高
-  ]
-
-  // 将工作表添加到工作簿
-  workbook.Sheets['Sheet1'] = worksheet
-  workbook.SheetNames.push('Sheet1')
-
-  // 使用 xlsx-style 导出
-  const wbout = XLSXStyle.write(workbook, {
-    bookType: 'xlsx',
-    bookSST: false,
-    type: 'binary'
-  })
-
-  // 转换为 Blob 并下载
-  const blob = new Blob([s2ab(wbout)], { type: 'application/octet-stream' })
+  // 生成文件并下载
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
   const link = document.createElement('a')
   link.href = URL.createObjectURL(blob)
   link.download = filenameWithTimestamp
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
-}
-
-// 字符串转 ArrayBuffer
-function s2ab(s) {
-  const buf = new ArrayBuffer(s.length)
-  const view = new Uint8Array(buf)
-  for (let i = 0; i < s.length; i++) {
-    view[i] = s.charCodeAt(i) & 0xFF
-  }
-  return buf
 } 
