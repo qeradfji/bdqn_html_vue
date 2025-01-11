@@ -18,6 +18,23 @@
             <el-button @click="resetForm">
               <el-icon><Refresh /></el-icon>重置
             </el-button>
+            <el-upload
+              class="excel-upload"
+              action="#"
+              accept=".xlsx, .xls"
+              :show-file-list="false"
+              :before-upload="handleImport"
+            >
+              <el-button type="primary">
+                <el-icon><Upload /></el-icon>导入Excel
+              </el-button>
+            </el-upload>
+            <el-button type="info" @click="downloadTemplate">
+              <el-icon><Download /></el-icon>下载模板
+            </el-button>
+            <el-button type="success" @click="handleExport">
+              <el-icon><Download /></el-icon>导出Excel
+            </el-button>
           </el-button-group>
         </el-form-item>
       </el-form>
@@ -32,9 +49,6 @@
             <span class="title">学生列表</span>
             <el-tag type="info" effect="plain" round>共 {{ total }} 条</el-tag>
           </div>
-          <el-button type="primary" @click="handleAdd">
-            <el-icon><Plus /></el-icon>添加学生
-          </el-button>
         </div>
       </template>
       
@@ -85,7 +99,7 @@
       </div>
     </el-card>
 
-    <!-- 添加/编辑对话框 -->
+    <!-- 编辑对话框 -->
     <el-dialog
       v-model="dialogVisible"
       :title="dialogType === 'add' ? '添加学生' : '编辑学生'"
@@ -99,113 +113,42 @@
         label-width="100px"
         style="max-width: 460px"
       >
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="学号" prop="studentNo">
-              <el-input v-model="form.studentNo" :disabled="dialogType === 'edit'" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="姓名" prop="name">
-              <el-input v-model="form.name" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="班级" prop="classe">
-              <el-input v-model="form.classe" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="手机号" prop="phone">
-              <el-input v-model="form.phone" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="状态" prop="status">
-              <el-select v-model="form.status" placeholder="请选择状态">
-                <el-option label="在读" :value="1" />
-                <el-option label="休学" :value="2" />
-                <el-option label="退学" :value="3" />
-                <el-option label="毕业" :value="4" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="入学时间" prop="enrollmentDate">
-              <el-date-picker
-                v-model="form.enrollmentDate"
-                type="date"
-                placeholder="选择日期"
-                style="width: 100%"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="年龄" prop="age">
-              <el-input v-model="form.age" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="微信号" prop="wechat">
-              <el-input v-model="form.wechat" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="QQ号" prop="qq">
-              <el-input v-model="form.qq" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="身份证号" prop="idCard">
-              <el-input v-model="form.idCard" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="出生日期" prop="birthday">
-              <el-date-picker
-                v-model="form.birthday"
-                type="date"
-                placeholder="选择日期"
-                style="width: 100%"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="民族" prop="nation">
-              <el-input v-model="form.nation" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="籍贯" prop="nativePlace">
-              <el-input v-model="form.nativePlace" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="政治面貌" prop="politicalStatus">
-              <el-input v-model="form.politicalStatus" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="婚姻状况" prop="maritalStatus">
-              <el-select v-model="form.maritalStatus" placeholder="请选择">
-                <el-option label="未婚" :value="1" />
-                <el-option label="已婚" :value="2" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="现居地址" prop="address">
-              <el-input v-model="form.address" type="textarea" :rows="2" />
-            </el-form-item>
-          </el-col>
-        </el-row>
+        <el-form-item label="学号" prop="studentNo">
+          <el-input v-model="form.studentNo" :disabled="dialogType === 'edit'" />
+        </el-form-item>
+        <el-form-item label="姓名" prop="name">
+          <el-input v-model="form.name" />
+        </el-form-item>
+        <el-form-item label="班级" prop="classe">
+          <el-input v-model="form.classe" />
+        </el-form-item>
+        <el-form-item label="手机号" prop="phone">
+          <el-input v-model="form.phone" />
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-select v-model="form.status" placeholder="请选择状态">
+            <el-option label="在读" :value="1" />
+            <el-option label="休学" :value="2" />
+            <el-option label="退学" :value="3" />
+            <el-option label="毕业" :value="4" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="入学时间" prop="enrollmentDate">
+          <el-date-picker
+            v-model="form.enrollmentDate"
+            type="date"
+            placeholder="选择日期"
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-form-item label="年龄" prop="age">
+          <el-input v-model="form.age" />
+        </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitForm">
-            确认
-          </el-button>
+          <el-button type="primary" @click="submitForm">确认</el-button>
         </span>
       </template>
     </el-dialog>
@@ -214,55 +157,45 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { Edit, Delete, Plus, Search, Refresh, Document, User, Phone, Male, Female, List } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
-  getStudentList, 
+  Search, Refresh, Upload, Download, User, List, Edit, Delete 
+} from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import ExcelJS from 'exceljs'
+import { saveAs } from 'file-saver'
+import { 
+  getStudentListByHeadteacher, 
   addStudent, 
   updateStudent, 
   deleteStudent,
-  getStudentListByHeadteacher
+  importStudents 
 } from '@/api/student'
+import * as XLSX from 'xlsx'
 
 // 表格数据
 const loading = ref(false)
 const studentList = ref([])
-
-// 分页
+const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
-const total = ref(0)
 
 // 搜索表单
 const filterForm = reactive({
-  name: ''  // 只保留姓名查询
+  name: ''
 })
 
 // 弹窗表单
 const dialogVisible = ref(false)
-const dialogType = ref('add') // add 或 edit
+const dialogType = ref('add')
 const formRef = ref(null)
 const form = reactive({
-  studentId: '',
   studentNo: '',
   name: '',
   phone: '',
   status: 1,
-  classId: '',
-  teacherId: '',
+  classe: '',
   enrollmentDate: '',
-  graduationDate: '',
-  wechat: '',
-  qq: '',
-  idCard: '',
-  birthday: '',
-  nation: '',
-  nativePlace: '',
-  politicalStatus: '',
-  maritalStatus: 1,
-  address: '',
-  age: '',
-  classe: ''
+  age: ''
 })
 
 // 表单验证规则
@@ -282,9 +215,6 @@ const rules = {
   ],
   classe: [
     { required: true, message: '请输入班级', trigger: 'blur' }
-  ],
-  idCard: [
-    { pattern: /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/, message: '请输入正确的身份证号', trigger: 'blur' }
   ]
 }
 
@@ -293,59 +223,47 @@ const fetchStudentList = async () => {
   loading.value = true
   try {
     const teacherName = localStorage.getItem('teacherName')
-    console.log('当前教师名称:', teacherName)
-    
     if (!teacherName) {
       ElMessage.error('获取教师信息失败，请重新登录')
       return
     }
     
     const params = {
-      pageNum: currentPage.value,
+      currentPage: currentPage.value,
       pageSize: pageSize.value,
       headteacher: teacherName,
       name: filterForm.name || undefined
     }
     
-    console.log('请求参数:', params)
     const res = await getStudentListByHeadteacher(params)
-    console.log('响应数据:', res)
-    
     if (res.data && res.data.records) {
       studentList.value = res.data.records
       total.value = res.data.total
-    } else {
-      studentList.value = []
-      total.value = 0
     }
   } catch (error) {
     console.error('获取学生列表失败:', error)
-    if (error.response) {
-      console.error('错误状态码:', error.response.status)
-      console.error('错误信息:', error.response.data)
-    }
-    ElMessage.error(error.message || error.msg || '获取学生列表失败')
+    ElMessage.error('获取学生列表失败')
   } finally {
     loading.value = false
   }
 }
 
-// 搜索
+// 搜索和重置
 const handleSearch = () => {
   currentPage.value = 1
   fetchStudentList()
 }
 
-// 重置搜索
 const resetForm = () => {
   filterForm.name = ''
   currentPage.value = 1
   fetchStudentList()
 }
 
-// 分页变化
+// 分页
 const handleSizeChange = (val) => {
   pageSize.value = val
+  currentPage.value = 1
   fetchStudentList()
 }
 
@@ -354,25 +272,32 @@ const handleCurrentChange = (val) => {
   fetchStudentList()
 }
 
-// 添加学生
-const handleAdd = () => {
-  dialogType.value = 'add'
-  dialogVisible.value = true
-  Object.keys(form).forEach(key => {
-    form[key] = ''
-  })
-  form.gender = '男'
-  if (formRef.value) {
-    formRef.value.resetFields()
-  }
-}
-
-// 编辑学生
+// 编辑和删除
 const handleEdit = (row) => {
   dialogType.value = 'edit'
   dialogVisible.value = true
   Object.keys(form).forEach(key => {
     form[key] = row[key]
+  })
+}
+
+const handleDelete = (row) => {
+  ElMessageBox.confirm(
+    `确定要删除学生 ${row.name} 的信息吗？`,
+    '警告',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  ).then(async () => {
+    try {
+      await deleteStudent(row.studentId)
+      ElMessage.success('删除成功')
+      fetchStudentList()
+    } catch (error) {
+      ElMessage.error('删除失败')
+    }
   })
 }
 
@@ -394,7 +319,7 @@ const submitForm = async () => {
         dialogVisible.value = false
         fetchStudentList()
       } catch (error) {
-        ElMessage.error(error.msg || '操作失败')
+        ElMessage.error('操作失败')
       } finally {
         loading.value = false
       }
@@ -402,28 +327,7 @@ const submitForm = async () => {
   })
 }
 
-// 删除学生
-const handleDelete = (row) => {
-  ElMessageBox.confirm(
-    `确定要删除学生 ${row.name} 的信息吗？`,
-    '警告',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning',
-    }
-  ).then(async () => {
-    try {
-      await deleteStudent(row.studentId)
-      ElMessage.success('删除成功')
-      fetchStudentList()
-    } catch (error) {
-      ElMessage.error(error.msg || '删除失败')
-    }
-  })
-}
-
-// 获取状态文本
+// 状态处理
 const getStatusText = (status) => {
   const statusMap = {
     1: '在读',
@@ -434,7 +338,6 @@ const getStatusText = (status) => {
   return statusMap[status] || '未知'
 }
 
-// 获取状态标签类型
 const getStatusType = (status) => {
   const typeMap = {
     1: 'success',
@@ -445,7 +348,224 @@ const getStatusType = (status) => {
   return typeMap[status] || ''
 }
 
-// 页面加载时获取数据
+// 导入Excel
+const handleImport = async (file) => {
+  try {
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      try {
+        const data = e.target.result
+        const workbook = XLSX.read(data, { type: 'array' })
+        const firstSheetName = workbook.SheetNames[0]
+        const worksheet = workbook.Sheets[firstSheetName]
+        
+        // 转换为JSON数据
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
+        
+        // 移除表头
+        jsonData.shift()
+        
+        // 获取教师信息
+        const teacherName = localStorage.getItem('teacherName')
+        if (!teacherName) {
+          ElMessage.error('获取教师信息失败，请重新登录')
+          return
+        }
+
+        // 转换为学生对象数组
+        const studentList = jsonData.map(row => ({
+          studentNo: row[0],
+          name: row[1],
+          classe: row[2],
+          phone: row[3],
+          age: parseInt(row[4]) || 0,
+          idCard: row[5],
+          nation: row[6],
+          nativePlace: row[7],
+          politicalStatus: row[8],
+          address: row[9],
+          wechat: row[10],
+          qq: row[11],
+          enrollmentDate: row[12],
+          headteacher: teacherName,
+          status: 1
+        }))
+
+        // 发送数据到后端
+        const res = await importStudents(studentList)
+        
+        if (res.code === 200) {
+          const { successCount, failCount, failList } = res.data
+          if (failCount > 0) {
+            ElMessage.warning(`导入完成：成功${successCount}条，失败${failCount}条`)
+            console.error('失败数据:', failList)
+          } else {
+            ElMessage.success(`成功导入${successCount}条数据`)
+          }
+          fetchStudentList()
+        } else {
+          ElMessage.error(res.message || '导入失败')
+        }
+      } catch (error) {
+        console.error('处理Excel数据失败:', error)
+        ElMessage.error('处理Excel数据失败')
+      }
+    }
+    reader.readAsArrayBuffer(file)
+  } catch (error) {
+    console.error('导入失败:', error)
+    ElMessage.error('导入失败')
+  }
+  return false
+}
+
+const downloadTemplate = async () => {
+  try {
+    const workbook = new ExcelJS.Workbook()
+    const worksheet = workbook.addWorksheet('学生信息')
+
+    // 设置列
+    worksheet.columns = [
+      { header: '学号', key: 'studentNo', width: 15 },
+      { header: '姓名', key: 'name', width: 12 },
+      { header: '班级', key: 'classe', width: 15 },
+      { header: '手机号', key: 'phone', width: 15 },
+      { header: '年龄', key: 'age', width: 10 },
+      { header: '身份证号', key: 'idCard', width: 20 },
+      { header: '民族', key: 'nation', width: 10 },
+      { header: '籍贯', key: 'nativePlace', width: 15 },
+      { header: '政治面貌', key: 'politicalStatus', width: 12 },
+      { header: '家庭住址', key: 'address', width: 30 },
+      { header: '微信号', key: 'wechat', width: 15 },
+      { header: 'QQ号', key: 'qq', width: 15 },
+      { header: '入学时间', key: 'enrollmentDate', width: 15 }
+    ]
+
+    // 添加示例数据
+    worksheet.addRow({
+      studentNo: '20240001',
+      name: '张三',
+      classe: 'Web2401班',
+      phone: '13800138001',
+      age: 18,
+      idCard: '110101200001011234',
+      nation: '汉族',
+      nativePlace: '北京',
+      politicalStatus: '群众',
+      address: '北京市海淀区',
+      wechat: 'wx123',
+      qq: '123456',
+      enrollmentDate: '2024-01-01'
+    })
+
+    // 设置样式
+    worksheet.getRow(1).font = { bold: true }
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE6F0FF' }
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer()
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    saveAs(blob, '学生信息导入模板.xlsx')
+
+    ElMessage.success('模板下载成功')
+  } catch (error) {
+    console.error('模板下载失败:', error)
+    ElMessage.error('模板下载失败')
+  }
+}
+
+const handleExport = async () => {
+  try {
+    const teacherName = localStorage.getItem('teacherName')
+    if (!teacherName) {
+      ElMessage.error('获取教师信息失败，请重新登录')
+      return
+    }
+
+    const res = await getStudentListByHeadteacher({
+      currentPage: 1,
+      pageSize: 999999,
+      headteacher: teacherName
+    })
+
+    if (res.code === 200 && res.data.records) {
+      const workbook = new ExcelJS.Workbook()
+      const worksheet = workbook.addWorksheet('学生信息')
+
+      worksheet.columns = [
+        { header: '学号', key: 'studentNo', width: 15 },
+        { header: '姓名', key: 'name', width: 12 },
+        { header: '手机号', key: 'phone', width: 15 },
+        { header: '班级', key: 'classe', width: 15 },
+        { header: '状态', key: 'status', width: 10 }
+      ]
+
+      worksheet.insertRow(1, ['北大青鸟教务系统 - 学生信息表'])
+      worksheet.mergeCells('A1:E1')
+
+      const titleRow = worksheet.getRow(1)
+      titleRow.height = 40
+      titleRow.getCell(1).font = {
+        name: '宋体',
+        size: 16,
+        bold: true,
+        color: { argb: 'FFFFFFFF' }
+      }
+      titleRow.getCell(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4B90FF' }
+      }
+      titleRow.getCell(1).alignment = {
+        vertical: 'middle',
+        horizontal: 'center'
+      }
+
+      const rows = res.data.records.map(item => ({
+        studentNo: item.studentNo,
+        name: item.name,
+        phone: item.phone,
+        classe: item.classe,
+        status: getStatusText(item.status)
+      }))
+      worksheet.addRows(rows)
+
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber > 1) {
+          row.height = 25
+          row.alignment = {
+            vertical: 'middle',
+            horizontal: 'center'
+          }
+          row.eachCell(cell => {
+            cell.border = {
+              top: { style: 'thin', color: { argb: 'FFE9E9E9' } },
+              left: { style: 'thin', color: { argb: 'FFE9E9E9' } },
+              bottom: { style: 'thin', color: { argb: 'FFE9E9E9' } },
+              right: { style: 'thin', color: { argb: 'FFE9E9E9' } }
+            }
+          })
+        }
+      })
+
+      const timestamp = new Date().toLocaleString().replace(/[/:]/g, '').replace(/\s/g, '_')
+      const fileName = `学生信息表_${timestamp}.xlsx`
+
+      const buffer = await workbook.xlsx.writeBuffer()
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      saveAs(blob, fileName)
+
+      ElMessage.success('导出成功')
+    }
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败')
+  }
+}
+
 onMounted(() => {
   fetchStudentList()
 })
@@ -453,18 +573,15 @@ onMounted(() => {
 
 <style scoped>
 .students-container {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  padding: 20px;
 }
 
 .filter-card {
-  margin-bottom: 0;
-  border-radius: 8px;
+  margin-bottom: 20px;
 }
 
 .table-card {
-  border-radius: 8px;
+  margin-bottom: 20px;
 }
 
 .card-header {
@@ -473,21 +590,19 @@ onMounted(() => {
   align-items: center;
 }
 
-.card-header .left {
+.left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
-.card-header .icon {
+.icon {
   font-size: 20px;
-  color: var(--el-color-primary);
 }
 
 .title {
   font-size: 16px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
+  font-weight: bold;
 }
 
 .pagination-container {
@@ -496,31 +611,16 @@ onMounted(() => {
   justify-content: flex-end;
 }
 
-:deep(.el-card__header) {
-  padding: 12px 20px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
+.excel-upload {
+  display: inline-block;
 }
 
-:deep(.el-table) {
-  border-radius: 4px;
-  overflow: hidden;
+:deep(.el-upload) {
+  display: inline-block;
 }
 
-:deep(.el-form-item) {
-  margin-bottom: 18px;
-}
-
-:deep(.el-dialog__body) {
-  padding-top: 20px;
-}
-
-/* 动画效果 */
-.el-card {
-  transition: all 0.3s ease;
-}
-
-.el-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+.el-button-group {
+  display: flex;
+  gap: 10px;
 }
 </style> 

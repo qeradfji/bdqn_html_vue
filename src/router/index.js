@@ -1,6 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import Layout from '../layout/index.vue'
 
 const routes = [
   {
@@ -10,32 +8,61 @@ const routes = [
   {
     path: '/login',
     name: 'Login',
-    component: () => import('../views/Login.vue')
+    component: () => import('@/views/Login.vue')
   },
+  // 管理员路由
+  {
+    path: '/admin',
+    component: () => import('@/layout/admin/index.vue'),
+    redirect: '/admin/dashboard',
+    children: [
+      {
+        path: 'dashboard',
+        name: 'AdminDashboard',
+        component: () => import('@/views/admin/Dashboard.vue')
+      },
+      {
+        path: 'students',
+        name: 'AdminStudents',
+        component: () => import('@/views/admin/Students.vue')
+      },
+      {
+        path: 'teachers',
+        name: 'AdminTeachers',
+        component: () => import('@/views/admin/Teachers.vue')
+      },
+      {
+        path: 'classes',
+        name: 'AdminClasses',
+        component: () => import('../views/admin/Classes.vue')
+      }
+    ]
+  },
+  // 普通教师路由
   {
     path: '/main',
-    component: Layout,
+    component: () => import('@/layout/index.vue'),
     redirect: '/main/dashboard',
     children: [
       {
         path: 'dashboard',
         name: 'Dashboard',
-        component: () => import('../views/Dashboard.vue')
+        component: () => import('@/views/Dashboard.vue')
       },
       {
         path: 'students',
         name: 'Students',
-        component: () => import('../views/Students.vue')
+        component: () => import('@/views/Students.vue')
       },
       {
         path: 'discipline',
         name: 'Discipline',
-        component: () => import('../views/Discipline.vue')
+        component: () => import('@/views/Discipline.vue')
       },
       {
         path: 'interviews',
         name: 'Interviews',
-        component: () => import('../views/Interviews.vue')
+        component: () => import('@/views/Interviews.vue')
       }
     ]
   }
@@ -44,26 +71,6 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes
-})
-
-// 简化路由守卫
-router.beforeEach((to, from, next) => {
-  console.log('路由跳转:', to.path)
-  
-  // 如果是访问登录页，直接放行
-  if (to.path === '/login') {
-    next()
-    return
-  }
-  
-  // 其他页面需要验证登录状态
-  const teacherName = localStorage.getItem('teacherName')
-  if (!teacherName) {
-    ElMessage.warning('请先登录')
-    next('/login')
-  } else {
-    next()
-  }
 })
 
 export default router 

@@ -175,9 +175,10 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { Search, Refresh, User, List } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getDisciplineList, addDiscipline, updateDiscipline, deleteDiscipline } from '@/api/discipline'
-import { getClassById } from '@/api/class'
+import { getClassList } from '@/api/class'
 
 // 表格数据
 const loading = ref(false)
@@ -440,6 +441,20 @@ const violationDescriptions = {
   '网络违规': '包括传播不当信息、攻击学校网络等行为',
   '损坏公物': '包括故意损坏学校设施、教学设备等行为',
   '其他违规': '未列入以上类型的其他违规行为'
+}
+
+// 获取班级信息
+const getClassName = async (classId) => {
+  try {
+    const res = await getClassList({ classId })  // 使用 getClassList 替代 getClassById
+    if (res.code === 200) {
+      return res.data.className
+    }
+    return '未知班级'
+  } catch (error) {
+    console.error('获取班级信息失败:', error)
+    return '未知班级'
+  }
 }
 
 onMounted(() => {

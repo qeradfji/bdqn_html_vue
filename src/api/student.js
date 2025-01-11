@@ -1,57 +1,81 @@
-import request from './config'
+import request from '@/utils/request'
 
 // 获取学生列表
-export function getStudentList(params) {
-  const teacherId = localStorage.getItem('teacherId')
+export const getStudentList = (params) => {
   return request({
-    url: '/sys-student/list',
+    url: '/sys-student/list-by-headteacher',
     method: 'get',
     params: {
-      ...params,
-      teacherId: teacherId
+      currentPage: params.currentPage,
+      pageSize: params.pageSize,
+      name: params.name,
+      classe: params.classe
     }
   })
 }
 
 // 添加学生
-export function addStudent(data) {
-  const teacherName = localStorage.getItem('teacherName')
+export const addStudent = (data) => {
   return request({
     url: '/sys-student/add',
     method: 'post',
-    data: {
-      ...data,
-      headteacher: teacherName
-    }
+    data
   })
 }
 
-// 更新学生信息
-export function updateStudent(data) {
-  const teacherName = localStorage.getItem('teacherName')
+// 更新学生
+export const updateStudent = (data) => {
   return request({
     url: '/sys-student/update',
     method: 'put',
-    data: {
-      ...data,
-      headteacher: teacherName
-    }
+    data
   })
 }
 
 // 删除学生
-export function deleteStudent(studentId) {
+export const deleteStudent = (id) => {
   return request({
-    url: `/sys-student/delete/${studentId}`,
+    url: `/sys-student/delete/${id}`,
     method: 'delete'
   })
 }
 
 // 根据班主任查询学生列表
-export function getStudentListByHeadteacher(params) {
+export const getStudentListByHeadteacher = (params) => {
   return request({
     url: '/sys-student/list-by-headteacher',
     method: 'get',
     params
+  })
+}
+
+// 获取所有学生人数
+export const getAllStudentCount = () => {
+  return request({
+    url: '/sys-student/count-all',
+    method: 'get'
+  })
+}
+
+// 导出学生数据
+export const exportStudents = () => {
+  return request({
+    url: '/student/export',
+    method: 'get',
+    responseType: 'blob'  // 重要：设置响应类型为 blob
+  })
+}
+
+// 导入学生数据
+export const importStudents = (file) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request({
+    url: '/student/import',
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
   })
 } 

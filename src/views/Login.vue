@@ -89,18 +89,26 @@ const handleLogin = () => {
         if (res.code === 200) {
           const teacherName = res.data.realName
           const userId = res.data.userId
+          const role = res.data.role
           
           localStorage.setItem('teacherName', teacherName)
           localStorage.setItem('userId', String(userId))
+          localStorage.setItem('role', role)
           localStorage.setItem('userInfo', JSON.stringify({
             username: res.data.username,
             realName: teacherName,
             userId: userId,
-            role: res.data.role
+            role: role
           }))
           
           ElMessage.success('登录成功')
-          router.replace('/main/dashboard')
+          
+          // 根据角色跳转到不同的页面
+          if (role === '超级管理员') {
+            router.replace('/admin/dashboard')
+          } else {
+            router.replace('/main/dashboard')
+          }
         } else {
           ElMessage.error(res.message || '登录失败')
         }
