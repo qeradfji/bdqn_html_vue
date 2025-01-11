@@ -2,7 +2,7 @@ import axios from 'axios'
 import { ElMessage } from 'element-plus'
 
 const service = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.PROD ? 'http://localhost:8080' : '/api',
   timeout: 5000
 })
 
@@ -21,7 +21,8 @@ service.interceptors.request.use(
 service.interceptors.response.use(
   response => response.data,
   error => {
-    console.log('接口开发中...')
+    console.error('接口错误:', error)
+    ElMessage.error(error.response?.data?.message || '请求失败')
     return Promise.reject(error)
   }
 )
