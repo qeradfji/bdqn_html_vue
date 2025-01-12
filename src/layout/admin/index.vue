@@ -23,6 +23,10 @@
           <el-icon><UserFilled /></el-icon>
           <span>教师管理</span>
         </el-menu-item>
+        <el-menu-item index="/admin/guardian">
+          <el-icon><Avatar /></el-icon>
+          <span>家长管理</span>
+        </el-menu-item>
         <el-menu-item index="/admin/classes">
           <el-icon><School /></el-icon>
           <span>班级管理</span>
@@ -78,7 +82,8 @@ import {
   ArrowDown, 
   Warning,
   ChatDotRound,
-  OfficeBuilding
+  OfficeBuilding,
+  Avatar
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -138,21 +143,5 @@ const handleCommand = (command) => {
 
 .el-aside {
   background-color: #304156;
-  transition: width 0.3s;
-}
-
-.el-menu {
-  border-right: none;
-}
-
-.el-menu-item {
-  display: flex;
-  align-items: center;
-}
-
-.el-icon {
-  margin-right: 5px;
-  width: 24px;
-  text-align: center;
 }
 </style> 

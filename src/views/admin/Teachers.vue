@@ -111,18 +111,12 @@
         <el-form-item label="密码" prop="password" v-if="dialogType === 'add'">
           <el-input v-model="form.password" type="password" placeholder="请输入密码" />
         </el-form-item>
-        <el-form-item label="部门" prop="departmentId">
-          <el-select 
-            v-model="form.departmentId" 
-            placeholder="请选择所属部门"
-            style="width: 100%">
-            <el-option
-              v-for="item in departmentList"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
+        <el-form-item label="部门" prop="departmentName">
+          <el-input 
+            v-model="form.departmentName" 
+            placeholder="请输入部门名称"
+            style="width: 100%"
+          />
         </el-form-item>
         <el-form-item label="职位" prop="position">
           <el-select v-model="form.position" placeholder="请选择职位">
@@ -190,7 +184,6 @@ const form = reactive({
   username: '',
   realName: '',
   password: '',
-  departmentId: undefined,
   departmentName: '',
   position: 1,
   phone: '',
@@ -212,8 +205,8 @@ const rules = {
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, max: 20, message: '长度在 6 到 20 个字符', trigger: 'blur' }
   ],
-  departmentId: [
-    { required: true, message: '请选择所属部门', trigger: 'change' }
+  departmentName: [
+    { required: true, message: '请输入部门名称', trigger: 'blur' }
   ],
   position: [
     { required: true, message: '请选择职位', trigger: 'change' }
@@ -292,7 +285,6 @@ const resetForm = () => {
     formRef.value.resetFields()
   }
   Object.assign(form, {
-    departmentId: undefined,
     departmentName: ''
   })
   currentPage.value = 1
@@ -337,7 +329,6 @@ const handleAdd = () => {
   form.username = ''
   form.realName = ''
   form.password = ''
-  form.departmentId = undefined
   form.departmentName = ''
   form.position = 1
   form.phone = ''
@@ -370,46 +361,16 @@ const handleSubmit = async () => {
   })
 }
 
-// 部门列表
-const departmentList = ref([])
-
-// 获取所有部门列表
-const fetchAllDepartments = async () => {
-  try {
-    const res = await request.get('/sys-department/list', {
-      params: {
-        current: 1,
-        size: 99999
-      }
-    })
-    
-    if (res && res.records) {
-      departmentList.value = res.records.map(item => ({
-        value: item.departmentId,
-        label: item.name,
-        description: item.description
-      }))
-    } else {
-      ElMessage.error('获取部门列表失败')
-    }
-  } catch (error) {
-    console.error('获取部门列表失败:', error)
-    ElMessage.error('获取部门列表失败')
-  }
-}
-
 // 编辑教师
 const handleEdit = (row) => {
   dialogType.value = 'edit'
   Object.assign(form, {
-    departmentId: row.departmentId,
     departmentName: row.departmentName
   })
   dialogVisible.value = true
 }
 
 onMounted(() => {
-  fetchAllDepartments()
   fetchTeacherList()
 })
 </script>

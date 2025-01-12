@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import Layout from '@/layout/index.vue'
 
-const routes = [
+export const routes = [
   {
     path: '/',
     redirect: '/login'
@@ -50,14 +51,20 @@ const routes = [
         path: 'department',
         name: 'AdminDepartment',
         component: () => import('@/views/admin/Department.vue')
+      },
+      // 添加家长管理路由
+      {
+        path: 'guardian',
+        name: 'AdminGuardian',
+        component: () => import('@/views/admin/Guardian.vue')
       }
     ]
   },
   // 普通教师路由
   {
     path: '/main',
-    component: () => import('@/layout/index.vue'),
-    redirect: '/main/dashboard',
+    name: 'Main',
+    component: Layout,
     children: [
       {
         path: 'dashboard',
@@ -80,12 +87,39 @@ const routes = [
         component: () => import('@/views/Interviews.vue')
       }
     ]
+  },
+  // 教师管理路由
+  {
+    path: '/discipline',
+    component: Layout,
+    name: 'TeacherManage',
+    meta: {
+      title: '教师管理',
+      icon: 'User'
+    },
+    children: [
+      {
+        path: 'students',
+        name: 'DisciplineStudents',
+        component: () => import('@/views/Students.vue'),
+        meta: {
+          title: '学生管理',
+          icon: 'User'
+        }
+      }
+    ]
   }
 ]
 
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+// 添加导航守卫用于调试
+router.beforeEach((to, from, next) => {
+  console.log('Navigation to:', to.path)
+  next()
 })
 
 export default router 

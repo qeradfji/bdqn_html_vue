@@ -2,18 +2,7 @@
   <div class="dashboard-container">
     <!-- 统计卡片 -->
     <el-row :gutter="20">
-      <el-col :span="12">
-        <el-card shadow="hover" class="stat-card">
-          <template #header>
-            <div class="card-header">
-              <span>学生总数</span>
-              <el-icon><User /></el-icon>
-            </div>
-          </template>
-          <div class="card-value">{{ stats.studentCount }}</div>
-        </el-card>
-      </el-col>
-      <el-col :span="12">
+      <el-col :span="24">
         <el-card shadow="hover" class="stat-card">
           <template #header>
             <div class="card-header">
@@ -44,14 +33,13 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, reactive } from 'vue'
-import { User, Warning } from '@element-plus/icons-vue'
+import { Warning } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
-import { getStudentCount, getDisciplineCount } from '@/api/dashboard'
+import { getDisciplineCount } from '@/api/dashboard'
 import { ElMessage } from 'element-plus'
 
-// 只保留需要的统计数据
+// 只保留违纪统计数据
 const stats = reactive({
-  studentCount: 0,
   disciplineCount: 0
 })
 
@@ -100,14 +88,7 @@ const fetchStats = async () => {
       return
     }
 
-    const [studentRes, disciplineRes] = await Promise.all([
-      getStudentCount(),
-      getDisciplineCount()
-    ])
-
-    if (studentRes.code === 200) {
-      stats.studentCount = studentRes.data.studentCount
-    }
+    const disciplineRes = await getDisciplineCount()
 
     if (disciplineRes.code === 200 && disciplineRes.typeCount) {
       stats.disciplineCount = disciplineRes.typeCount.reduce((total, item) => {

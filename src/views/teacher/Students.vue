@@ -19,10 +19,13 @@
 </template>
 
 <script setup>
-import ExcelJS from 'exceljs'
-import { saveAs } from 'file-saver'
-import { Download } from '@element-plus/icons-vue'
-// ... 其他导入保持不变 ...
+import { ref, reactive, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
+import { Plus } from '@element-plus/icons-vue'
+import request from '@/utils/request'
+import useUserStore from '@/store/modules/user'
+
+const userStore = useUserStore()
 
 // Excel导出
 const handleExport = async () => {

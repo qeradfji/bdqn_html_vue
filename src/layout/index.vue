@@ -10,31 +10,52 @@
         class="el-menu-vertical"
         background-color="#001529"
         text-color="#fff"
-        active-text-color="#409EFF">
-        <el-menu-item index="/main/dashboard">
-          <el-icon><DataLine /></el-icon>
-          <span>控制台</span>
-        </el-menu-item>
-        <el-menu-item index="/main/students">
-          <el-icon><User /></el-icon>
-          <span>学生管理</span>
-        </el-menu-item>
-        <el-menu-item index="/main/discipline">
-          <el-icon><Warning /></el-icon>
-          <span>违纪管理</span>
-        </el-menu-item>
-        <el-menu-item index="/main/interviews">
-          <el-icon><ChatLineRound /></el-icon>
-          <span>访谈管理</span>
-        </el-menu-item>
+        active-text-color="#409EFF"
+      >
+        <template v-if="userRole === 'admin'">
+          <el-menu-item index="/main/dashboard">
+            <el-icon><DataLine /></el-icon>
+            <span>控制台</span>
+          </el-menu-item>
+          <el-menu-item index="/main/department">
+            <el-icon><OfficeBuilding /></el-icon>
+            <span>部门管理</span>
+          </el-menu-item>
+          <el-menu-item index="/main/teachers">
+            <el-icon><User /></el-icon>
+            <span>教师管理</span>
+          </el-menu-item>
+          <el-menu-item index="/main/guardian">
+            <el-icon><UserFilled /></el-icon>
+            <span>家长管理</span>
+          </el-menu-item>
+        </template>
+        <template v-else>
+          <el-menu-item index="/main/dashboard">
+            <el-icon><DataLine /></el-icon>
+            <span>控制台</span>
+          </el-menu-item>
+          <el-menu-item index="/main/students">
+            <el-icon><User /></el-icon>
+            <span>学生管理</span>
+          </el-menu-item>
+          <el-menu-item index="/main/discipline">
+            <el-icon><Warning /></el-icon>
+            <span>违纪管理</span>
+          </el-menu-item>
+          <el-menu-item index="/main/interviews">
+            <el-icon><ChatLineRound /></el-icon>
+            <span>访谈管理</span>
+          </el-menu-item>
+        </template>
       </el-menu>
     </el-aside>
     <el-container>
       <el-header>
         <div class="header-left">
           <el-icon class="fold-icon" @click="isCollapse = !isCollapse">
-            <Fold v-if="!isCollapse"/>
-            <Expand v-else/>
+            <Fold v-if="!isCollapse" />
+            <Expand v-else />
           </el-icon>
           <el-breadcrumb separator="/">
             <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
@@ -49,7 +70,9 @@
             </span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
+                <el-dropdown-item divided @click="handleLogout"
+                  >退出登录</el-dropdown-item
+                >
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -63,37 +86,50 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { 
-  User, Warning, ChatLineRound, Fold, 
-  Expand, DataLine 
-} from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { ref, computed } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import {
+  User,
+  Warning,
+  ChatLineRound,
+  Fold,
+  Expand,
+  DataLine,
+  OfficeBuilding,
+  UserFilled,
+} from "@element-plus/icons-vue";
+import { ElMessage } from "element-plus";
 
-const router = useRouter()
-const route = useRoute()
-const isCollapse = ref(false)
+const router = useRouter();
+const route = useRoute();
+const isCollapse = ref(false);
+
+const userRole = computed(() => {
+  return localStorage.getItem("role") || "teacher";
+});
 
 const currentRoute = computed(() => {
   const routeMap = {
-    '/dashboard': '控制台',
-    '/students': '学生管理',
-    '/discipline': '违纪管理',
-    '/interviews': '访谈管理'
-  }
-  return routeMap[route.path] || '首页'
-})
+    "/main/dashboard": "控制台",
+    "/main/department": "部门管理",
+    "/main/teachers": "教师管理",
+    "/main/guardian": "家长管理",
+    "/main/students": "学生管理",
+    "/main/discipline": "违纪管理",
+    "/main/interviews": "访谈管理",
+  };
+  return routeMap[route.path] || "首页";
+});
 
 const handleLogout = () => {
-  localStorage.removeItem('token')
-  ElMessage.success('退出成功')
-  router.push('/login')
-}
+  localStorage.removeItem("token");
+  ElMessage.success("退出成功");
+  router.push("/login");
+};
 
 const teacherName = computed(() => {
-  return localStorage.getItem('teacherName') || '老师'
-})
+  return localStorage.getItem("teacherName") || "老师";
+});
 </script>
 
 <style scoped>
@@ -206,4 +242,4 @@ const teacherName = computed(() => {
   background-color: #f0f2f5;
   padding: 20px;
 }
-</style> 
+</style>
