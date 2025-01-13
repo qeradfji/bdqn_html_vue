@@ -165,7 +165,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { Search, Refresh, School, List, Plus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getClassList, deleteClass, addClass, updateClass } from '@/api/class'
+import { getClassList, deleteClass, createClass, updateClass } from '@/api/class'
 import { getAllTeachers } from '@/api/teacher'
 
 // 表格数据
@@ -333,15 +333,19 @@ const handleDelete = (row) => {
     type: 'warning'
   }).then(async () => {
     try {
-      const res = await deleteClass(row.id)
+      const res = await deleteClass(row.classId)
       if (res.code === 200) {
-        ElMessage.success(res.message || '删除成功')
+        ElMessage.success('删除成功')
         fetchClassList()
+      } else {
+        ElMessage.error(res.message || '删除失败')
       }
     } catch (error) {
       console.error('删除失败:', error)
       ElMessage.error('删除失败')
     }
+  }).catch(() => {
+    // 取消删除，不做任何操作
   })
 }
 
@@ -369,7 +373,7 @@ const handleSubmit = async () => {
   await formRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        const api = dialogType.value === 'add' ? addClass : updateClass
+        const api = dialogType.value === 'add' ? createClass : updateClass
         // 构造提交的数据
         const submitData = {
           ...form,

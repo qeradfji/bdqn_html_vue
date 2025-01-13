@@ -2,6 +2,9 @@ import request from '@/utils/request'
 
 // 获取学生列表
 export const getStudentList = (params) => {
+  // 使用 layout/index.vue 中存储的 teacherName
+  const teacherName = localStorage.getItem('teacherName')
+  
   return request({
     url: '/sys-student/list-by-headteacher',
     method: 'get',
@@ -9,7 +12,9 @@ export const getStudentList = (params) => {
       currentPage: params.currentPage,
       pageSize: params.pageSize,
       name: params.name,
-      classe: params.classe
+      classe: params.classe,
+      headteacher: teacherName,  // 使用 layout 中存储的教师姓名
+      includeHeadteacher: true
     }
   })
 }
@@ -41,11 +46,21 @@ export const deleteStudent = (id) => {
 }
 
 // 根据班主任查询学生列表
-export const getStudentListByHeadteacher = (params) => {
+export const getStudentListByHeadteacher = (params = {}) => {
+  // 使用 layout/index.vue 中存储的 teacherName
+  const teacherName = localStorage.getItem('teacherName')
+  
   return request({
     url: '/sys-student/list-by-headteacher',
     method: 'get',
-    params
+    params: {
+      currentPage: params.currentPage || 1,
+      pageSize: params.pageSize || 9999,
+      name: params.name || '',
+      classe: params.classe || '',
+      headteacher: teacherName,
+      includeHeadteacher: true
+    }
   })
 }
 

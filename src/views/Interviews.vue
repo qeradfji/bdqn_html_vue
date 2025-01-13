@@ -64,24 +64,6 @@
           </template>
         </el-table-column>
         <el-table-column prop="teacherName" label="访谈教师" width="120" />
-        <el-table-column 
-          prop="createTime" 
-          label="创建时间" 
-          width="180"
-        >
-          <template #default="{ row }">
-            {{ formatDateTime(row.createTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column 
-          prop="updateTime" 
-          label="更新时间" 
-          width="180"
-        >
-          <template #default="{ row }">
-            {{ formatDateTime(row.updateTime) }}
-          </template>
-        </el-table-column>
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="scope">
             <el-button type="primary" link @click="handleEdit(scope.row)">编辑</el-button>
@@ -373,7 +355,13 @@ const submitForm = async () => {
 const studentOptions = ref([])
 const fetchStudentOptions = async () => {
   try {
-    const res = await getStudentListByHeadteacher()
+    const res = await getStudentListByHeadteacher({
+      currentPage: 1,
+      pageSize: 9999,
+      name: '',
+      classe: ''
+    })
+    
     if (res.code === 200) {
       studentOptions.value = res.data.records.map(student => ({
         id: student.studentId,
@@ -394,12 +382,6 @@ onMounted(() => {
   fetchInterviewList()
   fetchStudentOptions()
 })
-
-// 时间格式化函数
-const formatDateTime = (time) => {
-  if (!time) return '-'
-  return dayjs(time).format('YYYY-MM-DD HH:mm:ss')
-}
 
 // 日期格式化函数
 const formatDate = (date) => {

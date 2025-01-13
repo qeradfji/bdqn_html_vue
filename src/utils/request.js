@@ -4,12 +4,10 @@ import router from '@/router'
 
 // 创建 axios 实例
 const service = axios.create({
-  baseURL: '/api',  // 改回使用代理
-  timeout: 15000,   // 增加超时时间
-  withCredentials: true,  // 允许携带 cookie
+  baseURL: '/api',
+  timeout: 15000,
   headers: {
-    'Content-Type': 'application/json',
-    'X-Requested-With': 'XMLHttpRequest'
+    'Content-Type': 'application/json'
   }
 })
 

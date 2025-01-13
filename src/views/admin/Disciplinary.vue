@@ -3,6 +3,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { Search, Refresh, Plus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/utils/request'  // 导入请求工具
+import { addDiscipline } from '@/api/discipline'  // 导入添加违纪记录的函数
 
 // 表格数据
 const tableData = ref([])
@@ -190,26 +191,19 @@ const handleSubmit = async () => {
   await formRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        const url = dialogType.value === 'add' 
-          ? '/sys-student-disciplinary/add'
-          : '/sys-student-disciplinary/update'
-        
-        const res = await request({
-          url,
-          method: 'PUT',
-          data: form
-        })
+        const res = await addDiscipline(form)
         
         if (res.code === 200) {
-          ElMessage.success(res.data || (dialogType.value === 'add' ? '添加成功' : '修改成功'))
+          ElMessage.success('添加成功')
           dialogVisible.value = false
           fetchDisciplinaryList()
+          resetForm()
         } else {
-          ElMessage.error(res.message || (dialogType.value === 'add' ? '添加失败' : '修改失败'))
+          ElMessage.error(res.message || '添加失败')
         }
       } catch (error) {
-        console.error(dialogType.value === 'add' ? '添加失败:' : '修改失败:', error)
-        ElMessage.error(dialogType.value === 'add' ? '添加失败' : '修改失败')
+        console.error('添加失败:', error)
+        ElMessage.error(error.message || '添加失败')
       }
     }
   })

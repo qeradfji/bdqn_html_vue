@@ -3,6 +3,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { Search, Refresh, Plus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/utils/request'
+import { addInterview, getStudentOptions, getClassOptions, getTeacherOptions } from '@/api/interview'
 
 // 表格数据
 const tableData = ref([])
@@ -23,27 +24,30 @@ const formRef = ref(null)
 
 // 表单数据
 const form = reactive({
-  interviewId: undefined,
-  studentId: undefined,
-  classId: undefined,
-  teacherId: undefined,
-  interviewDate: '',
-  interviewType: undefined,
-  content: '',
-  feedback: '',
-  status: 1,
-  studentName: '',
-  className: '',
-  teacherName: ''
+  studentId: undefined,      // 学生ID
+  classId: undefined,       // 班级ID
+  teacherId: null,          // 教师ID，改为 null
+  interviewDate: '',        // 访谈日期
+  interviewType: 1,         // 访谈类型，默认为学员访谈
+  content: '',              // 访谈内容
+  feedback: '',             // 反馈建议
+  status: 1,                // 状态，默认为正常
+  // 以下是显示用的字段
+  studentName: '',          // 学生姓名
+  className: '',           // 班级名称
+  teacherName: ''          // 教师姓名
 })
 
 // 访谈类型选项
 const interviewTypes = [
-  { label: '日常访谈', value: 1 },
-  { label: '学习情况', value: 2 },
-  { label: '心理辅导', value: 3 },
-  { label: '就业指导', value: 4 },
-  { label: '其他', value: 5 }
+  { label: '学员访谈', value: 1 },
+  { label: '监护人访谈', value: 2 }
+]
+
+// 状态选项
+const statusOptions = [
+  { label: '正常', value: 1 },
+  { label: '需要关注', value: 2 }
 ]
 
 // 获取访谈类型标签
@@ -54,11 +58,11 @@ const getInterviewTypeLabel = (type) => {
 
 // 表单验证规则
 const rules = {
-  studentName: [
-    { required: true, message: '请输入学生姓名', trigger: 'blur' }
+  studentId: [
+    { required: true, message: '请选择学生', trigger: 'change' }
   ],
-  className: [
-    { required: true, message: '请输入班级', trigger: 'blur' }
+  classId: [
+    { required: true, message: '请选择班级', trigger: 'change' }
   ],
   interviewDate: [
     { required: true, message: '请选择访谈日期', trigger: 'change' }
@@ -70,7 +74,13 @@ const rules = {
     { required: true, message: '请输入访谈内容', trigger: 'blur' }
   ],
   feedback: [
-    { required: true, message: '请输入反馈内容', trigger: 'blur' }
+    { required: true, message: '请输入反馈建议', trigger: 'blur' }
+  ],
+  status: [
+    { required: true, message: '请选择状态', trigger: 'change' }
+  ],
+  teacherId: [
+    { required: true, message: '请选择访谈教师', trigger: 'change' }
   ]
 }
 
@@ -157,39 +167,46 @@ const handleSubmit = async () => {
   await formRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        const url = dialogType.value === 'add' 
-          ? '/sys-interview/add'
-          : '/sys-interview/update'
+        // 获取当前教师信息
+        const teacherInfo = JSON.parse(localStorage.getItem('teacherInfo') || '{}')
         
-        const res = await request({
-          url,
-          method: 'PUT',
-          data: {
-            interviewId: form.interviewId,
-            studentId: form.studentId,
-            classId: form.classId,
-            teacherId: form.teacherId,
-            interviewDate: form.interviewDate,
-            interviewType: form.interviewType,
-            content: form.content,
-            feedback: form.feedback,
-            status: form.status,
-            studentName: form.studentName,
-            className: form.className,
-            teacherName: form.teacherName
-          }
-        })
+        console.log('Form before submit:', form)  // 添加日志
+        
+        // 确保有选择教师
+        if (!form.teacherId) {
+          ElMessage.warning('请选择访谈教师')
+          return
+        }
+
+        // 构造提交数据
+        const submitData = {
+          studentId: form.studentId,
+          classId: form.classId,
+          teacherId: Number(form.teacherId),  // 确保是数字类型
+          interviewDate: form.interviewDate,
+          interviewType: form.interviewType,
+          content: form.content,
+          feedback: form.feedback,
+          status: form.status,
+          createBy: teacherInfo.id,
+          updateBy: teacherInfo.id
+        }
+
+        console.log('Submit data:', submitData)  // 添加日志
+
+        const res = await addInterview(submitData)
         
         if (res.code === 200) {
-          ElMessage.success(res.data || (dialogType.value === 'add' ? '添加成功' : '修改成功'))
+          ElMessage.success('添加成功')
           dialogVisible.value = false
           fetchInterviewList()
+          resetForm()
         } else {
-          ElMessage.error(res.message || (dialogType.value === 'add' ? '添加失败' : '修改失败'))
+          ElMessage.error(res.message || '添加失败')
         }
       } catch (error) {
-        console.error(dialogType.value === 'add' ? '添加失败:' : '修改失败:', error)
-        ElMessage.error(dialogType.value === 'add' ? '添加失败' : '修改失败')
+        console.error('添加失败:', error)
+        ElMessage.error(error.message || '添加失败')
       }
     }
   })
@@ -204,7 +221,7 @@ const resetForm = () => {
     interviewId: undefined,
     studentId: undefined,
     classId: undefined,
-    teacherId: undefined,
+    teacherId: undefined,  // 改回 undefined
     interviewDate: '',
     interviewType: undefined,
     content: '',
@@ -252,11 +269,117 @@ const handleDelete = (row) => {
   })
 }
 
+// 新增记录
+const handleAdd = () => {
+  dialogType.value = 'add'
+  resetForm()
+  dialogVisible.value = true
+}
+
+// 添加下拉选项数据
+const studentOptions = ref([])
+const classOptions = ref([])
+const teacherOptions = ref([])
+
+// 获取学生列表
+const fetchStudentOptions = async () => {
+  try {
+    const res = await getStudentOptions()
+    if (res.code === 200) {
+      // 处理分页数据结构，与 Students.vue 保持一致
+      const students = res.data.records || []
+      studentOptions.value = students.map(item => ({
+        value: item.studentId,
+        label: `${item.name} (${item.classe})`,  // 显示学生姓名和班级
+        classId: item.classId,
+        className: item.classe,
+        headteacher: item.headteacher
+      }))
+    }
+  } catch (error) {
+    console.error('获取学生列表失败:', error)
+    ElMessage.error('获取学生列表失败')
+  }
+}
+
+// 获取班级列表
+const fetchClassOptions = async () => {
+  try {
+    const res = await getClassOptions()
+    if (res.code === 200) {
+      // 处理分页数据结构
+      const classes = res.data.records || []
+      classOptions.value = classes.map(item => ({
+        value: item.classId,
+        label: item.name
+      }))
+    }
+  } catch (error) {
+    console.error('获取班级列表失败:', error)
+    ElMessage.error('获取班级列表失败')
+  }
+}
+
+// 获取教师列表
+const fetchTeacherOptions = async () => {
+  try {
+    const res = await getTeacherOptions()
+    if (res.code === 200) {
+      // 处理分页数据结构
+      const teachers = res.data.records || []
+      teacherOptions.value = teachers.map(item => ({
+        value: item.userId,
+        label: item.realName
+      }))
+    }
+  } catch (error) {
+    console.error('获取教师列表失败:', error)
+    ElMessage.error('获取教师列表失败')
+  }
+}
+
+// 修改学生选择变化的处理函数
+const handleStudentChange = (studentId) => {
+  const student = studentOptions.value.find(item => item.value === studentId)
+  if (student) {
+    form.classId = student.classId
+    form.className = student.className
+    form.studentName = student.name  // 设置学生姓名
+    form.headteacher = student.headteacher  // 设置班主任名字
+  }
+}
+
+// 添加班级选择变化的处理函数
+const handleClassChange = (classId) => {
+  const selectedClass = classOptions.value.find(item => item.value === classId)
+  if (selectedClass) {
+    form.className = selectedClass.label
+  }
+}
+
+// 教师选择变化的处理函数
+const handleTeacherChange = (teacherId) => {
+  console.log('Selected teacherId:', teacherId)  // 添加日志
+  if (teacherId) {
+    const selectedTeacher = teacherOptions.value.find(item => item.value === teacherId)
+    if (selectedTeacher) {
+      form.teacherId = teacherId  // 直接使用选择的 teacherId
+      form.teacherName = selectedTeacher.label
+      console.log('Updated form:', form)  // 添加日志
+    }
+  }
+}
+
 // 初始化
-onMounted(() => {
+onMounted(async () => {
   // 从localStorage获取教师ID
   const teacherInfo = JSON.parse(localStorage.getItem('teacherInfo') || '{}')
   filterForm.teacherId = teacherInfo.id
+  await Promise.all([
+    fetchStudentOptions(),
+    fetchClassOptions(),
+    fetchTeacherOptions()
+  ])
   fetchInterviewList()
 })
 </script>
@@ -357,11 +480,38 @@ onMounted(() => {
         :model="form"
         :rules="rules"
         label-width="100px">
-        <el-form-item label="学生姓名" prop="studentName">
-          <el-input v-model="form.studentName" placeholder="请输入学生姓名" />
+        <el-form-item label="学生" prop="studentId">
+          <el-select 
+            v-model="form.studentId" 
+            placeholder="请选择学生"
+            filterable
+            @change="handleStudentChange"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="item in studentOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
         </el-form-item>
-        <el-form-item label="班级" prop="className">
-          <el-input v-model="form.className" placeholder="请输入班级" />
+        
+        <el-form-item label="班级" prop="classId">
+          <el-select 
+            v-model="form.classId" 
+            placeholder="请选择班级"
+            filterable
+            @change="handleClassChange"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="item in classOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="访谈日期" prop="interviewDate">
           <el-date-picker
@@ -397,6 +547,32 @@ onMounted(() => {
             :rows="4"
             placeholder="请输入反馈内容"
           />
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-select v-model="form.status" placeholder="请选择状态" style="width: 100%">
+            <el-option
+              v-for="item in statusOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="访谈教师" prop="teacherId">
+          <el-select 
+            v-model="form.teacherId" 
+            placeholder="请选择教师"
+            filterable
+            @change="handleTeacherChange"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="item in teacherOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
         </el-form-item>
       </el-form>
       <template #footer>

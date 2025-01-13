@@ -21,10 +21,10 @@ export const getClassList = (params) => {
   })
 }
 
-// 新增班级
-export const addClass = (data) => {
+// 添加班级
+export const createClass = (data) => {
   return request({
-    url: '/sys-class',
+    url: '/sys-class/add',
     method: 'post',
     data
   })
@@ -40,9 +40,9 @@ export const updateClass = (data) => {
 }
 
 // 删除班级
-export const deleteClass = (id) => {
+export const deleteClass = (classId) => {
   return request({
-    url: `/sys-class/${id}`,
+    url: `/sys-class/delete/${classId}`,
     method: 'delete'
   })
 }

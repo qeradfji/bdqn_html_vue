@@ -112,11 +112,18 @@
           <el-input v-model="form.password" type="password" placeholder="请输入密码" />
         </el-form-item>
         <el-form-item label="部门" prop="departmentName">
-          <el-input 
+          <el-select 
             v-model="form.departmentName" 
-            placeholder="请输入部门名称"
+            placeholder="请选择部门"
             style="width: 100%"
-          />
+          >
+            <el-option
+              v-for="item in departmentOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="职位" prop="position">
           <el-select v-model="form.position" placeholder="请选择职位">
@@ -130,18 +137,13 @@
         <el-form-item label="邮箱" prop="email">
           <el-input v-model="form.email" placeholder="请输入邮箱" />
         </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="form.status">
-            <el-radio :label="1">正常</el-radio>
-            <el-radio :label="0">禁用</el-radio>
-          </el-radio-group>
-        </el-form-item>
         <el-form-item label="入职时间" prop="joinTime">
           <el-date-picker
             v-model="form.joinTime"
             type="datetime"
             placeholder="请选择入职时间"
-            value-format="YYYY-MM-DD HH:mm:ss"
+            value-format="YYYY-MM-DDTHH:mm:ss"
+            format="YYYY-MM-DD HH:mm:ss"
           />
         </el-form-item>
       </el-form>
@@ -181,16 +183,23 @@ const formRef = ref(null)
 
 // 表单数据
 const form = reactive({
+  userId: null,
   username: '',
-  realName: '',
   password: '',
+  realName: '',
   departmentName: '',
   position: 1,
   phone: '',
   email: '',
   status: 1,
-  joinTime: ''
+  joinTime: null
 })
+
+// 添加部门选项常量
+const departmentOptions = [
+  { label: '学管部', value: '学管部' },
+  { label: '教质部', value: '教质部' }
+]
 
 // 表单验证规则
 const rules = {
@@ -198,18 +207,16 @@ const rules = {
     { required: true, message: '请输入用户名', trigger: 'blur' },
     { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
   ],
-  realName: [
-    { required: true, message: '请输入姓名', trigger: 'blur' }
-  ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, max: 20, message: '长度在 6 到 20 个字符', trigger: 'blur' }
   ],
-  departmentName: [
-    { required: true, message: '请输入部门名称', trigger: 'blur' }
+  realName: [
+    { required: true, message: '请输入姓名', trigger: 'blur' },
+    { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
   ],
-  position: [
-    { required: true, message: '请选择职位', trigger: 'change' }
+  departmentName: [
+    { required: true, message: '请选择部门', trigger: 'change' }
   ],
   phone: [
     { required: true, message: '请输入手机号', trigger: 'blur' },
@@ -218,9 +225,6 @@ const rules = {
   email: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
-  ],
-  status: [
-    { required: true, message: '请选择状态', trigger: 'change' }
   ],
   joinTime: [
     { required: true, message: '请选择入职时间', trigger: 'change' }
@@ -326,15 +330,18 @@ const handleDelete = (row) => {
 // 新增教师
 const handleAdd = () => {
   dialogType.value = 'add'
-  form.username = ''
-  form.realName = ''
-  form.password = ''
-  form.departmentName = ''
-  form.position = 1
-  form.phone = ''
-  form.email = ''
-  form.status = 1
-  form.joinTime = ''
+  Object.assign(form, {
+    userId: null,
+    username: '',
+    password: '',
+    realName: '',
+    departmentName: '',
+    position: 1,
+    phone: '',
+    email: '',
+    status: 1,
+    joinTime: null
+  })
   dialogVisible.value = true
 }
 
@@ -346,7 +353,38 @@ const handleSubmit = async () => {
     if (valid) {
       try {
         const api = dialogType.value === 'add' ? addTeacher : updateTeacher
-        const res = await api(form)
+        
+        const formatDate = (date) => {
+          if (!date) return null
+          return date.replace(' ', 'T')
+        }
+
+        const now = new Date().toISOString()
+        
+        const submitData = {
+          username: form.username.trim(),
+          password: dialogType.value === 'add' ? form.password.trim() : undefined,
+          realName: form.realName.trim(),
+          departmentId: Number(form.departmentName === '学管部' ? 1 : 2),
+          position: Number(form.position),
+          email: form.email.trim(),
+          phone: form.phone.trim(),
+          status: 1,
+          joinTime: formatDate(form.joinTime),
+          createBy: 1,
+          updateBy: 1,
+          createTime: now,
+          updateTime: now,
+          deleted: 0
+        }
+
+        if (dialogType.value === 'edit') {
+          submitData.userId = form.userId
+        }
+
+        console.log('提交的数据:', submitData)
+
+        const res = await api(submitData)
         
         if (res.code === 200) {
           ElMessage.success(dialogType.value === 'add' ? '新增成功' : '编辑成功')
@@ -354,8 +392,12 @@ const handleSubmit = async () => {
           fetchTeacherList()
         }
       } catch (error) {
-        console.error(dialogType.value === 'add' ? '新增失败:' : '编辑失败:', error)
-        ElMessage.error(dialogType.value === 'add' ? '新增失败' : '编辑失败')
+        console.error('提交失败:', {
+          error,
+          requestData: error.config?.data,
+          response: error.response?.data
+        })
+        ElMessage.error(error.response?.data?.message || '操作失败')
       }
     }
   })
@@ -365,7 +407,15 @@ const handleSubmit = async () => {
 const handleEdit = (row) => {
   dialogType.value = 'edit'
   Object.assign(form, {
-    departmentName: row.departmentName
+    userId: row.userId,
+    username: row.username,
+    realName: row.realName,
+    departmentName: row.departmentId === 1 ? '学管部' : '教质部',
+    position: row.position,
+    phone: row.phone,
+    email: row.email,
+    status: 1,
+    joinTime: row.joinTime
   })
   dialogVisible.value = true
 }

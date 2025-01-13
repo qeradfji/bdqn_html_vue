@@ -23,9 +23,9 @@ export const addTeacher = (data) => {
 }
 
 // 更新教师
-export const updateTeacher = (data) => {
+export function updateTeacher(data) {
   return request({
-    url: '/sys-user',
+    url: '/sys-user/update',
     method: 'put',
     data
   })
