@@ -397,7 +397,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getStudentListByHeadteacher } from '@/api/student'
+import { getAllStudentList } from '@/api/student'
 import ExcelJS from 'exceljs'
 import * as XLSX from 'xlsx'
 
@@ -457,7 +457,7 @@ const rules = {
 const getStudentList = async () => {
   loading.value = true
   try {
-    const res = await getStudentListByHeadteacher({
+    const res = await getAllStudentList({
       name: searchForm.value.name,
       currentPage: searchForm.value.currentPage,
       pageSize: searchForm.value.pageSize
@@ -596,7 +596,7 @@ const handleExport = async () => {
     worksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' }
 
     // 获取所有数据（可以考虑分页获取所有数据）
-    const res = await getStudentListByHeadteacher({
+    const res = await getAllStudentList({
       name: searchForm.value.name,
       currentPage: 1,
       pageSize: 1000 // 设置较大的数值以获取所有数据

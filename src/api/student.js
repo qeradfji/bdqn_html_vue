@@ -1,6 +1,20 @@
 import request from '@/utils/request'
 
-// 获取学生列表
+// 获取所有学生列表（管理员用）
+export const getAllStudentList = (params) => {
+  return request({
+    url: '/sys-student/list',  // 新的接口路径
+    method: 'get',
+    params: {
+      currentPage: params.currentPage,
+      pageSize: params.pageSize,
+      name: params.name,
+      classe: params.classe
+    }
+  })
+}
+
+// 获取学生列表（班主任用）
 export const getStudentList = (params) => {
   // 使用 layout/index.vue 中存储的 teacherName
   const teacherName = localStorage.getItem('teacherName')
@@ -13,7 +27,7 @@ export const getStudentList = (params) => {
       pageSize: params.pageSize,
       name: params.name,
       classe: params.classe,
-      headteacher: teacherName,  // 使用 layout 中存储的教师姓名
+      headteacher: teacherName,
       includeHeadteacher: true
     }
   })
